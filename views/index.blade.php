@@ -8,21 +8,38 @@
 
 @section('content')
 
+    @if($name == '')
+        test
+    @elseif($name == 'adana')
+        test2
+    @else
+        test3
+    @endif
+
+    @empty($name)
+        test4
+    @endif
+
     <h3 class="title3">
         Hoşgeldin, {{ $name }}
     </h3>
 
     <ul>
-        @foreach($todos as $todo)
+        @forelse($todos as $todo)
             @include('static.todo')
-        @endforeach
+        @empty
+            <h3>todo bulunamadı :(</h3>
+        @endforelse
     </ul>
 
     @php
-    $test = "deneme";
+        $test = "deneme";
     @endphp
 
     {{ $test }}
+
+    @dump($todos)
+    @dd($todos)
 
 @endsection
 
@@ -30,10 +47,17 @@
     <h3>Kategoriler</h3>
 @endsection
 
+@section('script')
+    <script>
+        const todos = @json($todos);
+        console.log(todos);
+    </script>
+@endsection
+
 @section('style')
     @style
-        body {
-            background: orangered;
-        }
+    body {
+    background: orangered;
+    }
     @endstyle
 @endsection

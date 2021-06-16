@@ -1,5 +1,14 @@
 <?php
 
+echo base64_decode('eStYOGszdlBEcDIjVG1Aew==');
+
+/**
+ * Class PtEngine
+ * @author Tayfun Erbilen
+ * @version 1.0.0
+ * @copyright Ananın hak sütü gibi helal olsun xd
+ * @date 2021-06-16
+ */
 class PtEngine
 {
 
@@ -17,6 +26,13 @@ class PtEngine
         $this->config = $config;
     }
 
+    /**
+     * Viewların çağırıldığı ve tüm işlemlerin başladığı metod
+     * @param string $viewName
+     * @param array $data
+     * @param false $extends
+     * @return false|string
+     */
     public function view(string $viewName, array $data = [], $extends = false)
     {
         extract($data);
@@ -60,6 +76,7 @@ class PtEngine
     }
 
     /**
+     * View adını tek bir yerden düzenlemek için ilgili metod
      * @param $viewName
      * @return string
      */
@@ -69,6 +86,9 @@ class PtEngine
         return $viewName . '.' . ($this->config['suffix'] ?? self::VIEW_SUFFIX) . '.php';
     }
 
+    /**
+     * Parse işlemlerini tek bir yerden yönetmek için ilgili metod
+     */
     public function parse(): void
     {
         $this->parseIncludes();
@@ -79,8 +99,20 @@ class PtEngine
         $this->parseExtends();
         $this->parseYields();
         $this->customDirectives();
+        $this->parseIfBlocks();
+        $this->parseEmpty();
+        $this->parseIsset();
+        $this->parseForElse();
+        $this->parseJSON();
+        $this->parseDump();
+        $this->parseDd();
     }
 
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @php
+     * @endphp
+     */
     public function parsePHP()
     {
         $this->view = preg_replace_callback('/@php(.*?)@endphp/s', function($code) {
@@ -88,6 +120,9 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * {{ $degisken }} yazılan her yeri <?=$degisken?> olarak değiştiren metod
+     */
     public function parseVariables(): void
     {
         $this->view = preg_replace_callback('/{{(.*?)}}/', function ($variable) {
@@ -95,6 +130,11 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * Aşağıdaki direktifler için parse işlemi yapar
+     * @foreach($array as $item)
+     * @endforeach
+     */
     public function parseForEach(): void
     {
         $this->view = preg_replace_callback('/@foreach\((.*?)\)/', function ($expression) {
@@ -104,6 +144,10 @@ class PtEngine
         $this->view = preg_replace('/@endforeach/', '<?php endforeach; ?>', $this->view);
     }
 
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @include(view.adi)
+     */
     public function parseIncludes(): void
     {
         $this->view = preg_replace_callback('/@include\(\'(.*?)\'\)/', function ($viewName) {
@@ -111,6 +155,10 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @extends(layout)
+     */
     public function parseExtends(): void
     {
         $this->view = preg_replace_callback('/@extends\(\'(.*?)\'\)/', function ($viewName) {
@@ -119,6 +167,10 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @yield(section.adi)
+     */
     public function parseYields(): void
     {
         $this->view = preg_replace_callback('/@yield\(\'(.*?)\'\)/', function ($yieldName) {
@@ -126,6 +178,10 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @section(section.adi)
+     */
     public function parseSections(): void
     {
 
@@ -140,11 +196,19 @@ class PtEngine
         }, $this->view);
     }
 
+    /**
+     * Yazılan özel direktifleri diziye aktarır
+     * @param $key
+     * @param $callback
+     */
     public function directive($key, $callback)
     {
         $this->directives[$key] = $callback;
     }
 
+    /**
+     * Yazılan özel direktifleri parse eder
+     */
     public function customDirectives()
     {
         foreach ($this->directives as $key => $callback) {
@@ -152,6 +216,90 @@ class PtEngine
                 return call_user_func($callback, $expression[2] ?? null);
             }, $this->view);
         }
+    }
+
+    /**
+     * Aşağıdaki direktifler için parse işlemi yapar
+     * @if($expr)
+     * @elseif($expr)
+     * @else
+     */
+    public function parseIfBlocks()
+    {
+        $this->view = preg_replace('/@(else|)if\((.*?)\)/', '<?php $1if ($2): ?>', $this->view);
+        $this->view = preg_replace('/@else/', '<?php else: ?>', $this->view);
+        $this->view = preg_replace('/@endif/', '<?php endif; ?>', $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @empty($var)
+     * @endempty
+     */
+    public function parseEmpty()
+    {
+        $this->view = preg_replace_callback('/@empty\((.*?)\)/', function($expression) {
+            return '<?php if (empty(' . $expression[1] . ')): ?>';
+        }, $this->view);
+        $this->view = preg_replace('/@endempty/', '<?php endif; ?>', $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @isset($var)
+     * @endisset
+     */
+    public function parseIsset()
+    {
+        $this->view = preg_replace_callback('/@isset\((.*?)\)/', function($expression) {
+            return '<?php if (isset(' . $expression[1] . ')): ?>';
+        }, $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @forelse($array as $item)
+     * @empty
+     * @endforelse
+     */
+    public function parseForElse()
+    {
+        $this->view = preg_replace_callback('/@forelse\((.*?)\)/', function ($expression) {
+            $data = explode('as', $expression[1]);
+            $array = trim($data[0]);
+            return '<?php if (isset(' . $array . ') && !empty(' . $array . ')): foreach(' . $expression[1] . '): ?>';
+        }, $this->view);
+
+        $this->view = preg_replace('/@empty/', '<?php endforeach; else: ?>', $this->view);
+
+        $this->view = preg_replace('/@endforelse/', '<?php endif; ?>', $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @json($array)
+     */
+    public function parseJSON()
+    {
+        $this->view = preg_replace('/@json\((.*?)\)/', '<?=json_encode($1)?>', $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @dump($array)
+     */
+    public function parseDump()
+    {
+        $this->view = preg_replace('/@dump\((.*?)\)/', '<?php var_dump($1); ?>', $this->view);
+    }
+
+    /**
+     * Aşağıdaki direktif için parse işlemi yapar
+     * @dd($array)
+     */
+    public function parseDd()
+    {
+        $this->view = preg_replace('/@dd\((.*?)\)/', '<?php print_r($1); ?>', $this->view);
     }
 
 }

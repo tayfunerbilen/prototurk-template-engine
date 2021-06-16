@@ -15,6 +15,11 @@
 </aside>
 
 <main class="content">
+
+    @page('contact')
+        <h6>Şu an iletişim sayfasındasınız!</h6>
+    @endpage
+
     @yield('content')
 </main>
 

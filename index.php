@@ -22,6 +22,14 @@ $pt->directive('endstyle', function() {
     return '</style>';
 });
 
+$pt->directive('page', function($page) {
+    return '<?php if (isset($_GET["page"]) && $_GET["page"] === \'' . $page . '\'): ?>';
+});
+
+$pt->directive('endpage', function() {
+    return '<?php endif; ?>';
+});
+
 if (!isset($_GET['page'])) {
     echo $pt->view('index', [
         'name' => 'Tayfun',
