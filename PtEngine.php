@@ -1,7 +1,5 @@
 <?php
 
-echo base64_decode('eStYOGszdlBEcDIjVG1Aew==');
-
 /**
  * Class PtEngine
  * @author Tayfun Erbilen
