@@ -224,7 +224,7 @@ class PtEngine
      */
     public function parseIfBlocks()
     {
-        $this->view = preg_replace('/@(else|)if\((.*?)\)/', '<?php $1if ($2): ?>', $this->view);
+        $this->view = preg_replace('/@(else|)if\((.*?\s\w)\)/', '<?php $1if ($2) : ?>', $this->view);
         $this->view = preg_replace('/@else/', '<?php else: ?>', $this->view);
         $this->view = preg_replace('/@endif/', '<?php endif; ?>', $this->view);
     }
